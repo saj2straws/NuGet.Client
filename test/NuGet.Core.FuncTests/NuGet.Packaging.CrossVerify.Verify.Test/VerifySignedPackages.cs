@@ -1,3 +1,6 @@
+// Copyright (c) .NET Foundation. All rights reserved.
+// Licensed under the Apache License, Version 2.0. See License.txt in the project root for license information.
+
 #if IS_SIGNING_SUPPORTED
 using System;
 using System.Collections.Generic;
@@ -11,6 +14,7 @@ using NuGet.Common;
 using NuGet.Packaging.FuncTest;
 using NuGet.Packaging.Signing;
 using NuGet.Test.Utility;
+using Test.Utility.Signing;
 using Xunit;
 
 namespace NuGet.Packaging.CrossVerify.Verify.Test
@@ -28,7 +32,7 @@ namespace NuGet.Packaging.CrossVerify.Verify.Test
                 new IntegrityVerificationProvider(),
                 new SignatureTrustAndValidityVerificationProvider()
             };
-            _dir = GetPreGenPackageRootPath();
+            _dir = GetGeneratedPackagesRootPath();
         }
 
         [Theory]
@@ -347,6 +351,31 @@ namespace NuGet.Packaging.CrossVerify.Verify.Test
         }
 
         [Theory]
+        [MemberData(nameof(FolderForWindows_NetFullFramework))]
+        public async Task VerifySignaturesAsync_PreGenerateSignedPackages_AuthorSigned_TimeStampedWithNoSigningCertificateUsage_Throws(string dir)
+        {
+            // Arrange
+            string caseName = TestPackages.Package1.ToString();
+
+            var signedPackageFolder = Path.Combine(dir, caseName, "package");
+            var signedPackagePath = TestFileSystemUtility.GetFirstFileNameOrNull(signedPackageFolder, "*.nupkg");
+
+            using (FileStream stream = File.OpenRead(signedPackagePath))
+            using (var reader = new PackageArchiveReader(stream))
+            {
+                // Act
+                PrimarySignature signature = await reader.GetPrimarySignatureAsync(CancellationToken.None);
+
+                var exception = Assert.Throws<SignatureException>(
+                    () => SignatureUtility.GetTimestampCertificateChain(signature));
+
+                Assert.Equal(
+                    "Either the signing-certificate or signing-certificate-v2 attribute must be present.",
+                    exception.Message);
+            }
+        }
+            
+        [Theory]
         [MemberData(nameof(FolderForEachPlatform))]
         public async Task VerifySignaturesAsync_PreGenerateSignedPackages_AuthorSigned_Timestamped_RepositorySigned_Timestamped(string dir)
         {
@@ -425,13 +454,23 @@ namespace NuGet.Packaging.CrossVerify.Verify.Test
             return sb.ToString();
         }
 
-        private static string GetPreGenPackageRootPath()
+        private static string GetGeneratedPackagesRootPath()
         {
             var root = TestFileSystemUtility.NuGetTestFolder;
-            var path = System.IO.Path.Combine(root, "PreGenPackages");
+            var path = Path.Combine(root, TestFolderNames.PreGenPackagesFolder);
 
             return path;
 
+        }
+
+        public static TheoryData FolderForWindows_NetFullFramework
+        {
+            get
+            {
+                var folder = new TheoryData<string>();
+                folder.Add(Path.Combine(GetGeneratedPackagesRootPath(), TestFolderNames.Windows_NetFullFrameworkFolder));
+                return folder;                
+            }
         }
 
         public static TheoryData FolderForEachPlatform
@@ -445,7 +484,7 @@ namespace NuGet.Packaging.CrossVerify.Verify.Test
                     "Linux_NetCore",
                 */
                 var folders = new TheoryData<string>();
-                foreach (var folder in Directory.GetDirectories(GetPreGenPackageRootPath()))
+                foreach (string folder in Directory.GetDirectories(GetGeneratedPackagesRootPath()))
                 {
                     folders.Add(folder);
                 }
