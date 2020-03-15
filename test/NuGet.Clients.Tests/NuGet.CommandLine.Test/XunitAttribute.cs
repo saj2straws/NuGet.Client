@@ -12,9 +12,31 @@ namespace NuGet.CommandLine.Test
     {
         public WindowsNTFactAttribute()
         {
-            if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+        }
+
+        private string _skip;
+
+        public override string Skip
+        {
+            get
             {
-                Skip = "Test only runs on Windows NT or later.";
+                var skip = _skip;
+
+                if (string.IsNullOrEmpty(skip))
+                {
+                    if (Environment.OSVersion.Platform != PlatformID.Win32NT)
+                    {
+                        Skip = "Test only runs on Windows NT or later.";
+                    }
+                }
+
+                // If this is null the test will run.
+                return skip;
+            }
+
+            set
+            {
+                _skip = value;
             }
         }
     }

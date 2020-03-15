@@ -1565,7 +1565,7 @@ public class B
 
         // Same test as PackCommand_ReferencedProjectWithNuspecFile, but with -MSBuidVersion
         // set to 14
-        [WindowsNTFact]
+        [WindowsNTFact(Skip = "PackCommand_ReferencedProjectWithNuspecFileWithMsbuild14")]
         public void PackCommand_ReferencedProjectWithNuspecFileWithMsbuild14()
         {
             var nugetexe = Util.GetNuGetExePath();
@@ -1787,7 +1787,7 @@ public class B
 
         // Same test as PackCommand_ReferencedProjectWithJsonFile, but with -MSBuidVersion
         // set to 14
-        [WindowsNTFact]
+        [WindowsNTFact(Skip = "https://github.com/NuGet/Home/issues/9303")]
         public void PackCommand_ReferencedProjectWithJsonFileWithMsbuild14()
         {
             var nugetexe = Util.GetNuGetExePath();
@@ -3383,7 +3383,7 @@ namespace Proj1
 
         // Tests that with -MSBuildVersion set to 14, a projec using C# 6.0 features (nameof in this test)
         // can be built successfully.
-        [WindowsNTFact]
+        [WindowsNTFact(Skip = "https://github.com/NuGet/Home/issues/9303")]
         public void PackCommand_WithMsBuild14()
         {
             var nugetexe = Util.GetNuGetExePath();
